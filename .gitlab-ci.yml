@@ -1,0 +1,22 @@
+image: maven:3.8.1-jdk-11
+
+stages:
+  - healthcheck-test
+  - contract-test
+  - functional-test
+
+healthcheck-test:
+  stage: healthcheck-test
+  script: mvn clean test -Dtest=HealthcheckTest
+
+contract-test:
+  needs: 
+    - healthcheck-test
+  stage: contract-test
+  script: mvn clean test -Dtest=*ContractTest
+
+functional-test:
+  needs: 
+    - healthcheck-test
+  stage: functional-test
+  script: mvn clean test -Dtest=*FunctionalTest

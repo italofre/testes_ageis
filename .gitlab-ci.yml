@@ -2,21 +2,32 @@ image: maven:3.8.1-jdk-11
 
 stages:
   - healthcheck-test
-  - contract-test
-  - functional-test
+  - parallel-tests
 
 healthcheck-test:
   stage: healthcheck-test
-  script: mvn clean test -Dtest=HealthcheckTest
+  script:
+    - mvn clean test -Dtest=HealthcheckTest
+  allow_failure: false # Garante que a pipeline falhe caso o healthcheck falhe
 
 contract-test:
+  stage: parallel-tests
   needs: 
-    - healthcheck-test
-  stage: contract-test
-  script: mvn clean test -Dtest=*ContractTest
+    - job: healthcheck-test
+      artifacts: true # Usa os artefatos gerados pelo healthcheck (se aplicável)
+  script:
+    - mvn clean test -Dtest=*ContractTest
 
 functional-test:
+  stage: parallel-tests
   needs: 
-    - healthcheck-test
-  stage: functional-test
-  script: mvn clean test -Dtest=*FunctionalTest
+    - job: healthcheck-test
+      artifacts: true
+  script:
+    - mvn clean test -Dtest=*FunctionalTest
+
+# Agendamento da Schedule para 06:00
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
